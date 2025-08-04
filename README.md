@@ -8,43 +8,70 @@ MindMate is a privacy-preserving, intelligent agent that helps users reflect on 
 
 ## 🌟 Key Features
 
-### 📝 Reflective Journaling Agent
-- Analyzes user journal entries (text or voice)
-- Extracts mood, recurring themes, emotional triggers
-- Stores a compressed emotional timeline for weekly reports
+### ✅ Currently Implemented
 
-### 🧩 Autonomous Planner Agent
-- Plans personalized weekly conversation goals
-- Chooses themes: e.g., "procrastination", "relationships", "imposter syndrome"
-- Adjusts based on sentiment trend detection or recurring cognitive biases
+#### 🔐 Authentication System
+- User registration and login with JWT tokens
+- Secure password hashing with bcrypt
+- Protected API endpoints with authentication middleware
 
-### 🧠 Socratic Dialogue Coach
-- Conducts guided conversations — not advice, but nudges thinking
-- Uses open-ended questions + memory to track how user responds over time
-- Offers CBT-style reflections (optionally) based on patterns
+#### 📝 Journal Management
+- Create and store journal entries with AI analysis
+- Extract emotional themes and triggers from entries
+- View journal history and weekly summaries
+- AI-powered insights on recurring patterns
 
-### 📈 Mood & Habit Insights
-- Graph of sentiment/emotion/mood over time
-- Correlates entries with behaviors (if tracked: e.g., sleep, screen time)
-- "What changed since last time?" agent that compares entries
+#### 💬 Conversation Agent
+- Interactive chat interface with AI companion
+- Context-aware conversations with memory
+- Start/end conversation sessions
+- Conversation history tracking
 
-### 🔐 Privacy & Local Mode
-- Optionally runs entirely offline (e.g., via LM Studio + Ollama + SQLite)
-- No cloud logging by default
-- Clearly separated tool-calling vs. user-facing agent layers
+#### 📊 Dashboard & Insights
+- Overview of user activity and statistics
+- Quick actions for common tasks
+- Recent activity tracking
+- User profile management
+
+#### 🎨 Modern UI/UX
+- Responsive design with Tailwind CSS
+- Dark/light mode support
+- Intuitive navigation between pages
+- Real-time notifications and feedback
+
+### 🚧 Planned Features
+
+#### 📈 Advanced Analytics
+- Mood tracking over time with visualizations
+- Habit correlation analysis
+- Personalized insights and recommendations
+
+#### 🧠 Enhanced AI Agents
+- Autonomous planner for conversation goals
+- Socratic dialogue coaching
+- CBT-style reflection prompts
+
+#### 🔐 Privacy Features
+- Local-only mode with offline AI
+- End-to-end encryption
+- Data export and deletion tools
 
 ## 🚀 Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| LLM | GPT-4 / Claude / Mixtral / Mistral (via Ollama) |
-| Agent Framework | LangGraph / CrewAI / semantic memory with LanceDB |
-| Backend | FastAPI |
-| Frontend | React + Tailwind CSS |
-| Voice | OpenAI Whisper or Deepgram |
-| Database | SQLite for local mode, Postgres for cloud |
-| Visuals | Charts via D3.js / Plotly for mood & topic tracking |
-| Local Deployment | Docker, optional Hugging Face Space or Replit |
+| **LLM** | OpenAI GPT-4o (with fallback to keyword analysis) |
+| **Agent Framework** | LangChain with ConversationBufferMemory |
+| **Backend** | FastAPI with SQLAlchemy ORM |
+| **Frontend** | React 18 + TypeScript + Vite |
+| **Styling** | Tailwind CSS + Lucide React Icons |
+| **State Management** | Zustand |
+| **Database** | SQLite (local development) |
+| **Authentication** | JWT with passlib[bcrypt] |
+| **API Communication** | Axios with interceptors |
+| **Build Tool** | Vite for frontend, uvicorn for backend |
+| **Containerization** | Docker + Docker Compose |
+| **Development** | Python venv, npm, hot reload |
 
 ## 🧪 Bonus Features
 
@@ -64,32 +91,45 @@ MindMate is a privacy-preserving, intelligent agent that helps users reflect on 
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/navneetha-rajan/mindmate.git
    cd mindmate
    ```
 
 2. **Set up the backend**
    ```bash
    cd backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-3. **Set up the frontend**
+3. **Configure environment variables**
+   ```bash
+   cp backend/env.example backend/.env
+   # Edit backend/.env and add your OpenAI API key
+   ```
+
+4. **Set up the frontend**
    ```bash
    cd frontend
    npm install
    ```
 
-4. **Run the development servers**
+5. **Run the development servers**
    ```bash
-   # Terminal 1 - Backend
+   # Terminal 1 - Backend (from project root)
    cd backend
-   uvicorn main:app --reload
+   python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
    
-   # Terminal 2 - Frontend
+   # Terminal 2 - Frontend (from project root)
    cd frontend
    npm run dev
    ```
+
+6. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
 
 ## 📁 Project Structure
 
@@ -97,22 +137,28 @@ MindMate is a privacy-preserving, intelligent agent that helps users reflect on 
 mindmate/
 ├── backend/                 # FastAPI backend
 │   ├── app/
-│   │   ├── agents/         # LLM agents and workflows
-│   │   ├── models/         # Data models and schemas
-│   │   ├── services/       # Business logic
-│   │   └── api/           # API routes
-│   ├── tests/             # Backend tests
-│   └── requirements.txt    # Python dependencies
+│   │   ├── agents/         # AI agents (Journal, Conversation, Planner, Insights)
+│   │   ├── api/           # API routes (auth, journal, conversation, insights)
+│   │   ├── models/        # Database models and Pydantic schemas
+│   │   └── services/      # Configuration and utilities
+│   ├── requirements.txt    # Python dependencies
+│   ├── main.py           # FastAPI application entry point
+│   ├── .env              # Environment variables (not in git)
+│   └── env.example       # Environment template
 ├── frontend/              # React frontend
 │   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── pages/        # Page components
-│   │   ├── services/     # API services
-│   │   └── utils/        # Utility functions
+│   │   ├── components/    # Layout and shared components
+│   │   ├── pages/        # Page components (Dashboard, Journal, etc.)
+│   │   ├── services/     # API communication
+│   │   └── stores/       # Zustand state management
 │   ├── public/           # Static assets
-│   └── package.json      # Node.js dependencies
+│   ├── package.json      # Node.js dependencies
+│   └── vite.config.ts    # Vite configuration
 ├── docs/                 # Documentation
-└── docker/              # Docker configuration
+├── docker/              # Docker configuration
+├── docker-compose.yml   # Multi-container setup
+├── dev-setup.sh        # Development setup script
+└── README.md           # This file
 ```
 
 ## 🔐 Privacy & Security
