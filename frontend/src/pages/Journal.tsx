@@ -1,6 +1,16 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { journalAPI } from '../services/api'
-import { BookOpen, Plus, Trash2, Eye, Calendar } from 'lucide-react'
+import { 
+  BookOpen, 
+  Plus, 
+  Trash2, 
+  Calendar, 
+  X, 
+  Smile, 
+  Frown, 
+  Meh, 
+  PenLine 
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface JournalEntry {
@@ -79,162 +89,170 @@ export default function Journal() {
     if (mood >= 2) return '😔'
     return '😢'
   }
-
-  if (loading) {
-    return (
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="card">
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-              <div className="h-20 bg-gray-200 rounded"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
+  
+  const getMoodColor = (mood: number) => {
+    if (mood >= 8) return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+    if (mood >= 6) return 'bg-teal-100 text-teal-700 border-teal-200'
+    if (mood >= 4) return 'bg-amber-100 text-amber-700 border-amber-200'
+    if (mood >= 2) return 'bg-orange-100 text-orange-700 border-orange-200'
+    return 'bg-rose-100 text-rose-700 border-rose-200'
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 animate-fade-in min-h-[calc(100vh-6rem)]">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Journal</h1>
-          <p className="text-gray-600 mt-2">
-            Reflect on your thoughts, feelings, and experiences
-          </p>
+          <h1 className="text-3xl font-bold text-warm-900 tracking-tight">Journal</h1>
+          <p className="text-warm-600 mt-1">Capture your journey, one thought at a time.</p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="btn-primary flex items-center space-x-2"
+          onClick={() => setShowForm(true)}
+          className="btn-primary flex items-center space-x-2 shadow-lg shadow-primary-500/30"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
           <span>New Entry</span>
         </button>
       </div>
 
-      {/* New Entry Form */}
+      {/* Write New Entry Modal/Overlay */}
       {showForm && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Write New Entry</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                What's on your mind?
-              </label>
-              <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="input-field min-h-[120px] resize-none"
-                placeholder="Write about your day, thoughts, feelings, or anything you'd like to reflect on..."
-                required
-              />
-            </div>
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-warm-900/30 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden animate-slide-up">
+            <div className="p-6 border-b border-warm-100 flex justify-between items-center bg-warm-50/50">
+              <h3 className="text-xl font-bold text-warm-900 flex items-center">
+                <PenLine className="mr-2 h-5 w-5 text-primary-600" />
+                New Entry
+              </h3>
+              <button 
                 onClick={() => setShowForm(false)}
-                className="btn-secondary"
+                className="text-warm-400 hover:text-warm-600 p-1 rounded-lg hover:bg-warm-100 transition-colors"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="btn-primary"
-              >
-                {submitting ? 'Saving...' : 'Save Entry'}
+                <X className="h-6 w-6" />
               </button>
             </div>
-          </form>
+            
+            <form onSubmit={handleSubmit} className="p-6 md:p-8">
+              <div className="mb-6">
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full min-h-[300px] p-6 text-lg leading-relaxed text-warm-900 placeholder-warm-300 bg-warm-50/50 rounded-2xl border border-transparent focus:bg-white focus:border-primary-200 focus:ring-2 focus:ring-primary-100 resize-none transition-all outline-none"
+                  placeholder="How are you feeling right now? What's on your mind? Let it all out..."
+                  autoFocus
+                />
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-warm-400">
+                  {content.length} characters
+                </p>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="btn-secondary"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting || !content.trim()}
+                    className="btn-primary min-w-[120px]"
+                  >
+                    {submitting ? 'Saving...' : 'Save Entry'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Journal Entries */}
-      <div className="space-y-4">
-        {entries.length === 0 ? (
-          <div className="card text-center py-12">
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No journal entries yet</h3>
-            <p className="text-gray-600 mb-4">
-              Start your journaling journey by writing your first entry
-            </p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="btn-primary"
-            >
-              Write Your First Entry
-            </button>
-          </div>
-        ) : (
-          entries.map((entry) => (
-            <div key={entry.id} className="card">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{getMoodEmoji(entry.mood_score)}</span>
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      {new Date(entry.created_at).toLocaleDateString()} at{' '}
-                      {new Date(entry.created_at).toLocaleTimeString()}
-                    </p>
-                    <p className="text-sm font-medium text-gray-700">
-                      Mood: {entry.mood_label} ({entry.mood_score}/10)
-                    </p>
+      {/* Loading State */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-64 bg-warm-100 rounded-3xl animate-pulse"></div>
+          ))}
+        </div>
+      ) : (
+        /* Entries Grid */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
+          {entries.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-dashed border-warm-200">
+              <div className="bg-warm-50 p-4 rounded-full mb-4">
+                <BookOpen className="h-8 w-8 text-warm-400" />
+              </div>
+              <h3 className="text-xl font-medium text-warm-900 mb-2">Your journal is empty</h3>
+              <p className="text-warm-500 max-w-md mx-auto mb-6">
+                Writing down your thoughts is a powerful way to understand yourself better.
+              </p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="btn-primary"
+              >
+                Write Your First Entry
+              </button>
+            </div>
+          ) : (
+            entries.map((entry) => (
+              <div 
+                key={entry.id} 
+                className="group bg-white rounded-3xl p-6 border border-warm-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col"
+              >
+                {/* Header */}
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium border ${getMoodColor(entry.mood_score)}`}>
+                      <span className="text-lg">{getMoodEmoji(entry.mood_score)}</span>
+                      <span>{entry.mood_label}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                     <button
+                      onClick={() => handleDelete(entry.id)}
+                      className="p-2 text-warm-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete entry"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(entry.id)}
-                  className="text-gray-400 hover:text-red-600 transition-colors"
-                  title="Delete entry"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
 
-              <div className="prose max-w-none">
-                <p className="text-gray-900 whitespace-pre-wrap">{entry.content}</p>
-              </div>
-
-              {(entry.themes?.length > 0 || entry.emotional_triggers?.length > 0) && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  {entry.themes?.length > 0 && (
-                    <div className="mb-2">
-                      <p className="text-xs font-medium text-gray-600 mb-1">Themes:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {entry.themes.map((theme, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                          >
-                            {theme}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {entry.emotional_triggers?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 mb-1">Triggers:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {entry.emotional_triggers.map((trigger, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
-                          >
-                            {trigger}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                {/* Content */}
+                <div className="flex-1 mb-6">
+                  <p className="text-warm-800 whitespace-pre-wrap leading-relaxed line-clamp-6 group-hover:line-clamp-none transition-all">
+                    {entry.content}
+                  </p>
                 </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
+
+                {/* Footer Meta */}
+                <div className="mt-auto pt-4 border-t border-warm-50">
+                   <div className="flex flex-wrap gap-2 mb-3">
+                      {entry.themes?.map((theme, i) => (
+                        <span key={i} className="text-xs font-medium px-2 py-1 bg-primary-50 text-primary-700 rounded-md">
+                          #{theme}
+                        </span>
+                      ))}
+                   </div>
+                   <div className="flex items-center text-xs text-warm-400 font-medium">
+                      <Calendar className="h-3 w-3 mr-1.5" />
+                      {new Date(entry.created_at).toLocaleDateString(undefined, { 
+                        weekday: 'long', 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                      <span className="mx-2">•</span>
+                      {new Date(entry.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                   </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   )
-} 
+}

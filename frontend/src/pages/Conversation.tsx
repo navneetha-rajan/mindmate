@@ -1,6 +1,16 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { conversationAPI } from '../services/api'
-import { MessageCircle, Send, Plus, Settings } from 'lucide-react'
+import { 
+  MessageCircle, 
+  Send, 
+  Plus, 
+  Settings, 
+  Bot, 
+  User as UserIcon,
+  Sparkles,
+  History,
+  MoreHorizontal
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Message {
@@ -21,10 +31,19 @@ export default function Conversation() {
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [conversationHistory, setConversationHistory] = useState<Message[]>([])
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadConversationHistory()
   }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
   const loadConversationHistory = async () => {
     try {
@@ -40,7 +59,6 @@ export default function Conversation() {
     try {
       const response = await conversationAPI.start(conversationType, theme)
       setSessionId(response.data.session_id)
-      // Clear current session messages when starting new conversation
       setMessages([])
       toast.success('New conversation started!')
     } catch (error) {
@@ -57,7 +75,6 @@ export default function Conversation() {
 
     setSending(true)
     try {
-      console.log('Sending message:', currentMessage)
       const response = await conversationAPI.sendMessage(
         currentMessage,
         sessionId,
@@ -65,11 +82,8 @@ export default function Conversation() {
         theme
       )
       
-      console.log('Response received:', response.data)
-      
-      // Create a new message object from the response
       const newMessage: Message = {
-        id: Date.now().toString(), // Generate a temporary ID
+        id: Date.now().toString(),
         message: currentMessage,
         response: response.data.response || 'No response received',
         conversation_type: response.data.conversation_type || conversationType,
@@ -77,11 +91,8 @@ export default function Conversation() {
         created_at: response.data.timestamp || new Date().toISOString()
       }
       
-      console.log('New message object:', newMessage)
-      setMessages(prev => [...prev, newMessage]) // Add to end for chronological order
+      setMessages(prev => [...prev, newMessage])
       setCurrentMessage('')
-      
-      // Reload conversation history after sending message
       loadConversationHistory()
     } catch (error) {
       console.error('Error sending message:', error)
@@ -109,166 +120,225 @@ export default function Conversation() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Conversation</h1>
-        <p className="text-gray-600 mt-2">
-          Have a guided conversation with MindMate
-        </p>
+    <div className="h-[calc(100vh-8rem)] flex flex-col gap-6 animate-fade-in">
+      <div className="flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-3xl font-bold text-warm-900 tracking-tight">Conversation</h1>
+          <p className="text-warm-600 mt-1">Your safe space for reflection and growth</p>
+        </div>
+        
+        {sessionId && (
+           <button
+             onClick={() => {
+               setSessionId(null)
+               setMessages([])
+             }}
+             className="btn-secondary text-sm"
+           >
+             End Session
+           </button>
+        )}
       </div>
 
-      {/* Conversation Setup */}
-      {!sessionId && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Start a New Conversation</h3>
+      <div className="flex-1 flex gap-6 overflow-hidden">
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col bg-white rounded-3xl shadow-soft border border-warm-100 overflow-hidden relative">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Conversation Type
-              </label>
-              <select
-                value={conversationType}
-                onChange={(e) => setConversationType(e.target.value)}
-                className="input-field"
-              >
-                {conversationTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label} - {type.description}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {!sessionId ? (
+            // Setup Screen
+            <div className="flex-1 flex items-center justify-center p-8 bg-warm-50/30">
+              <div className="max-w-lg w-full space-y-8 text-center">
+                <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-float">
+                  <Sparkles className="h-10 w-10 text-primary-600" />
+                </div>
+                
+                <div>
+                  <h2 className="text-2xl font-bold text-warm-900">Start a Session</h2>
+                  <p className="text-warm-500 mt-2">Choose how you'd like to converse today.</p>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Theme (Optional)
-              </label>
-              <select
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                className="input-field"
-              >
-                <option value="">Choose a theme...</option>
-                {themes.map((t) => (
-                  <option key={t} value={t}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+                <div className="space-y-4 text-left bg-white p-6 rounded-2xl shadow-sm border border-warm-100">
+                  <div>
+                    <label className="block text-sm font-semibold text-warm-700 mb-2">
+                      Conversation Style
+                    </label>
+                    <div className="grid grid-cols-1 gap-3">
+                      {conversationTypes.map((type) => (
+                        <div 
+                          key={type.value}
+                          onClick={() => setConversationType(type.value)}
+                          className={`cursor-pointer p-3 rounded-xl border transition-all duration-200 ${
+                            conversationType === type.value 
+                              ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' 
+                              : 'border-warm-200 hover:border-primary-300 hover:bg-warm-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                             <span className="font-medium text-warm-900">{type.label}</span>
+                             {conversationType === type.value && <div className="w-2 h-2 rounded-full bg-primary-500"></div>}
+                          </div>
+                          <p className="text-xs text-warm-500 mt-1">{type.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-          <div className="mt-6">
-            <button
-              onClick={startNewConversation}
-              disabled={loading}
-              className="btn-primary flex items-center space-x-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span>{loading ? 'Starting...' : 'Start Conversation'}</span>
-            </button>
-          </div>
-        </div>
-      )}
+                  <div>
+                    <label className="block text-sm font-semibold text-warm-700 mb-2">
+                      Focus Theme (Optional)
+                    </label>
+                    <select
+                      value={theme}
+                      onChange={(e) => setTheme(e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">Open conversation...</option>
+                      {themes.map((t) => (
+                        <option key={t} value={t}>
+                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-      {/* Active Conversation */}
-      {sessionId && (
-        <div className="card">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Active Conversation</h3>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">
-                {conversationType} • {theme || 'General'}
-              </span>
-              <button
-                onClick={() => {
-                  setSessionId(null)
-                  setMessages([])
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
-            {messages.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Start the conversation by sending a message</p>
+                  <button
+                    onClick={startNewConversation}
+                    disabled={loading}
+                    className="btn-primary w-full py-3 text-lg shadow-lg shadow-primary-500/30 mt-4"
+                  >
+                    {loading ? 'Connecting...' : 'Begin Conversation'}
+                  </button>
+                </div>
               </div>
+            </div>
+          ) : (
+            // Chat Interface
+            <>
+              {/* Header */}
+              <div className="h-16 border-b border-warm-100 flex items-center px-6 justify-between bg-white/80 backdrop-blur z-10">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <div>
+                    <p className="font-semibold text-warm-900">MindMate</p>
+                    <p className="text-xs text-warm-500 capitalize">
+                      {conversationType} • {theme || 'General'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth bg-warm-50/30">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-warm-400 opacity-60">
+                    <MessageCircle className="h-12 w-12 mb-2" />
+                    <p>Say hello to start...</p>
+                  </div>
+                ) : (
+                  messages.map((msg, index) => (
+                    <div key={index} className="space-y-6 animate-slide-up">
+                      {/* User Message */}
+                      <div className="flex justify-end items-end space-x-2">
+                        <div className="max-w-[85%] lg:max-w-[75%]">
+                          <div className="bg-primary-600 text-white rounded-2xl rounded-tr-none px-5 py-3 shadow-sm">
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                          </div>
+                          <p className="text-[10px] text-warm-400 text-right mt-1 mr-1">
+                             You
+                          </p>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                           <UserIcon className="h-4 w-4 text-primary-700" />
+                        </div>
+                      </div>
+                      
+                      {/* AI Response */}
+                      <div className="flex justify-start items-end space-x-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shrink-0 shadow-sm">
+                           <Bot className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="max-w-[85%] lg:max-w-[75%]">
+                          <div className="bg-white border border-warm-200 text-warm-800 rounded-2xl rounded-tl-none px-5 py-3 shadow-sm">
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.response}</p>
+                          </div>
+                          <p className="text-[10px] text-warm-400 ml-1 mt-1">MindMate</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {sending && (
+                  <div className="flex justify-start items-end space-x-2 animate-pulse">
+                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shrink-0 opacity-50">
+                        <Bot className="h-4 w-4 text-white" />
+                     </div>
+                     <div className="bg-warm-100 rounded-2xl rounded-tl-none px-4 py-3">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-warm-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-warm-400 rounded-full animate-bounce animation-delay-200"></div>
+                          <div className="w-2 h-2 bg-warm-400 rounded-full animate-bounce animation-delay-400"></div>
+                        </div>
+                     </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Area */}
+              <div className="p-4 bg-white border-t border-warm-100">
+                <form onSubmit={sendMessage} className="relative flex items-center gap-2 max-w-4xl mx-auto">
+                  <input
+                    type="text"
+                    value={currentMessage}
+                    onChange={(e) => setCurrentMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    className="w-full pl-4 pr-12 py-3.5 bg-warm-50 border-transparent focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 rounded-xl transition-all text-warm-900 placeholder-warm-400 shadow-inner"
+                    disabled={sending}
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending || !currentMessage.trim()}
+                    className="absolute right-2 p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:hover:bg-primary-600 transition-colors shadow-md"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* History Sidebar (Desktop) */}
+        <div className="hidden lg:flex w-80 flex-col bg-white rounded-3xl shadow-soft border border-warm-100 overflow-hidden">
+          <div className="p-4 border-b border-warm-100 bg-warm-50/50">
+            <div className="flex items-center space-x-2 text-warm-700">
+               <History className="h-4 w-4" />
+               <h3 className="font-semibold">History</h3>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+            {conversationHistory.length === 0 ? (
+              <p className="text-center text-sm text-warm-400 py-8">No past conversations</p>
             ) : (
-              messages.map((msg, index) => (
-                <div key={index} className="space-y-3">
-                  {/* User Message */}
-                  <div className="flex justify-end">
-                    <div className="bg-primary-600 text-white rounded-lg px-4 py-2 max-w-xs lg:max-w-md">
-                      <p className="text-sm">{msg.message || 'Message not available'}</p>
-                    </div>
+              conversationHistory.slice(0, 10).map((msg, index) => (
+                <div key={index} className="p-3 rounded-xl hover:bg-warm-50 cursor-pointer transition-colors group border border-transparent hover:border-warm-100">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded-md">
+                      {msg.conversation_type || 'General'}
+                    </span>
+                    <span className="text-[10px] text-warm-400">
+                      {new Date(msg.created_at).toLocaleDateString()}
+                    </span>
                   </div>
-                  
-                  {/* AI Response */}
-                  <div className="flex justify-start">
-                    <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2 max-w-xs lg:max-w-md">
-                      <p className="text-sm">{msg.response || 'Response not available'}</p>
-                    </div>
-                  </div>
+                  <p className="text-sm text-warm-600 line-clamp-2 group-hover:text-warm-900 transition-colors">
+                    {msg.message}
+                  </p>
                 </div>
               ))
             )}
           </div>
-
-          {/* Message Input */}
-          <form onSubmit={sendMessage} className="flex space-x-3">
-            <input
-              type="text"
-              value={currentMessage}
-              onChange={(e) => setCurrentMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="input-field flex-1"
-              disabled={sending}
-            />
-            <button
-              type="submit"
-              disabled={sending || !currentMessage.trim()}
-              className="btn-primary flex items-center space-x-2"
-            >
-              <Send className="h-4 w-4" />
-              <span>{sending ? 'Sending...' : 'Send'}</span>
-            </button>
-          </form>
         </div>
-      )}
-
-      {/* Conversation History */}
-      {conversationHistory.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Conversations</h3>
-          <div className="space-y-3">
-            {conversationHistory.slice(0, 5).map((msg, index) => (
-              <div key={index} className="border-b border-gray-200 pb-3 last:border-b-0">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-600">
-                      {msg.created_at ? new Date(msg.created_at).toLocaleDateString() : 'Unknown date'} at{' '}
-                      {msg.created_at ? new Date(msg.created_at).toLocaleTimeString() : 'Unknown time'}
-                    </p>
-                    <p className="text-sm font-medium text-gray-900 mt-1">
-                      {(msg.message || 'No message').substring(0, 100)}...
-                    </p>
-                  </div>
-                  <div className="text-xs text-gray-500 ml-2">
-                    {msg.conversation_type || 'general'} • {msg.theme || 'General'}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   )
-} 
+}
